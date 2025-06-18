@@ -1,0 +1,41 @@
+@startuml pay_0.1
+[*] --> Created : Создан заказ
+
+state Created {
+  [*] --> PendingPayment
+  PendingPayment --> PaymentProcessing : Начало оплаты
+  PaymentProcessing --> PaymentSuccessful : Оплата прошла успешно
+  PaymentProcessing --> PaymentFailed : Оплата не удалась
+  PaymentFailed --> PendingPayment : Повторить оплату
+}
+
+Created --> Cancelled : Отмена заказа
+Created --> Shipped : Заказ отправлен
+Shipped --> Delivered : Доставлен
+Delivered --> [*]
+
+state PaymentStatus {
+  [*] --> NotPaid
+  NotPaid --> Processing : Идёт оплата
+  Processing --> Paid : Оплата успешна
+  Processing --> Failed : Оплата провалена
+  Failed --> NotPaid : Попытка повторной оплаты
+}
+
+note right of Created
+  Статусы заказа:
+  - Created (создан)
+  - Cancelled (отменён)
+  - Shipped (отправлен)
+  - Delivered (доставлен)
+end note
+
+note right of PaymentStatus
+  Статусы оплаты:
+  - NotPaid (не оплачено)
+  - Processing (в процессе)
+  - Paid (оплачено)
+  - Failed (ошибка оплаты)
+end note
+
+@enduml

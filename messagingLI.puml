@@ -1,0 +1,34 @@
+@startuml
+title Automated Messages MVP - Sequence Diagram
+
+actor Messenger
+
+participant "LinkedIn API"
+participant Queue
+database "Messages DB"
+
+== Event Triggered ==
+Messenger -> "LinkedIn API" : Detect event (connection, online, post reaction)
+"LinkedIn API" --> Messenger : Event details
+
+Messenger -> Queue : Add message task with personalization & delay
+Queue --> Messenger : Task queued
+
+== Message Scheduling ==
+Messenger -> Queue : Check for scheduled messages ready to send
+Queue --> Messenger : Return next message task
+
+Messenger -> "Messages DB" : Check message history (spam prevention)
+"Messages DB" --> Messenger : Return previous message status
+
+alt Message not sent before and user not excluded
+    Messenger -> "LinkedIn API" : Send automated message
+    "LinkedIn API" --> Messenger : Confirm message sent
+
+    Messenger -> "Messages DB" : Log sent message details
+    "Messages DB" --> Messenger : Confirm log saved
+else Message already sent or user excluded
+    Messenger -> Queue : Discard or reschedule message
+end
+
+@enduml

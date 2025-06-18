@@ -1,0 +1,21 @@
+@startuml alt1
+
+actor Customer
+participant "Web App" as WebApp
+participant "Order Service" as OrderService
+participant "Payment Service" as PaymentService
+participant Stripe
+
+Customer -> WebApp: Put item into bin
+WebApp -> Cart: addProduct(product)
+Customer -> WebApp: Create Order
+WebApp -> OrderService: createOrder(user, cart)
+OrderService -> Order: new Order()
+OrderService -> PaymentService: createStripePayment(order)
+PaymentService -> Stripe: createCharge(amount, cardInfo)
+Stripe --> PaymentService: paymentSuccess(paymentId)
+PaymentService --> OrderService: paymentProcessed(paymentId)
+OrderService --> WebApp: orderConfirmed(orderId)
+WebApp --> Customer: Display order confirmation
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml class_0.1
+class User {
+  +name: String
+  +login(): void
+}
+
+class Admin extends User {
+  +banUser(): void
+}
+class Order {
+  +orderId: String
+  +amount: Double
+  +status: String
+  +createOrder(): void
+  -cancelOrder(): void
+  +confirmOrder(): void
+  +items[]: String
+}
+
+User --> "1..*" Order
+@enduml

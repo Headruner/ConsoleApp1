@@ -1,0 +1,49 @@
+@startuml class_0.2
+
+class User {
+  +userId: String
+  +name: String
+  +email: String
+  +placeOrder(): Order
+}
+
+class Product {
+  +productId: String
+  +name: String
+  +price: Decimal
+}
+
+class Cart {
+  +items: List<Product>
+  +addProduct(p: Product): void
+  +removeProduct(p: Product): void
+  +getTotalPrice(): Decimal
+}
+
+class Order {
+  +orderId: String
+  +orderDate: Date
+  +status: String
+  +totalAmount: Decimal
+  +createPayment(): Payment
+}
+
+class Payment {
+  +paymentId: String
+  +amount: Decimal
+  +status: String
+  +processPayment(): Boolean
+}
+
+class StripePayment extends Payment {
+  +stripeTransactionId: String
+  +processPayment(): Boolean
+}
+
+User "1" --> "1" Cart
+Cart "1" --> "*" Product
+User "1" --> "*" Order
+Order "1" --> "1" Payment
+Payment <|-- StripePayment
+
+@enduml

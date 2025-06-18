@@ -1,0 +1,76 @@
+@startuml "Payment Flow"
+!define RECTANGLE class
+skinparam TitleFontName "Arial"
+skinparam TitleFontSize 22
+header Payment flow including STRIPE token creation and payment processing once per month
+actor CourseOwner
+participant Platform
+participant Stripe
+database PaymentStorage as "Tokens"
+
+CourseOwner -> Platform: Open platform login page
+CourseOwner -> Platform: Authenticate with login and password
+Platform --> Platform: Validation success
+alt Authentication Failed
+    Platform -> CourseOwner: Show error message
+    CourseOwner -> Platform: Retry login
+    alt Forgot password
+        CourseOwner -> Platform: Request password reset
+        Platform -> Platform: Sub-process "Send password reset email"
+            'https://learn.microsoft.com/en-us/microsoft-365/admin/add-CourseOwners/reset-passwords
+    end 
+else Authentication Successful
+    Platform -> CourseOwner: Redirect to dashboard
+end
+
+CourseOwner -> Platform: Open promotions page
+Platform -> Platform: Check CourseOwner permissions
+alt Access Denied
+    Platform -> CourseOwner: Display "Access Denied" message
+else No course yet
+    Platform -> CourseOwner: Display "No courses yet" message
+    CourseOwner -> Platform: Click "Create course"
+    Platform -> CourseOwner: Show course creation options
+else No promotions available
+    Platform -> CourseOwner: Display "No promotions available" message
+else Positive main scenario
+    Platform -> CourseOwner: Show promotions options
+    CourseOwner -> Platform: Select promotion package;\nfill address and payment details
+    Platform -> Platform: Validate promotion selection \n(display all info in one new page)
+    CourseOwner -> Platform: Confirm promotion selection
+    CourseOwner -> Platform: Confirm promotion package
+    'https://docs.stripe.com/payments/build-a-two-step-confirmation
+    Platform -> Stripe: Create payment token \nhttps://docs.stripe.com/api/tokens
+    Stripe --> Platform: Return payment token
+    alt Additional payment steps
+        Platform -> Stripe: Invoke 3DSecure payment
+    end
+Platform -> PaymentStorage: Save payment intent with token
+    alt Payment Intent Save Failed
+        Platform -> CourseOwner: Show error "Unable to process payment"
+    else Payment Intent Save Successful
+        Platform -> CourseOwner: Show confirmation of payment
+    end
+end
+CourseOwner -> Platform: Confirm payment intent
+Platform -> CourseOwner: Display success message
+
+alt CourseOwner Cancels Payment
+    CourseOwner -> Platform: Cancel payment intent
+    Platform -> PaymentStorage: Delete saved payment intent
+    Platform -> CourseOwner: Confirm cancellation
+else Payment Processed End of Month
+    Platform -> Platform: Wait for end of month
+    Platform -> PaymentStorage: Retrieve saved payment token(s)
+    Platform -> Stripe: Process payment with saved token(s)
+    Stripe --> Platform: Payment success confirmation
+    Platform -> PaymentStorage: Update payment record to "Paid"
+    alt Failed to process payment
+    Platform -> PaymentStorage: Update payment record to "Failed"
+    Platform -> CourseOwner: Notify CourseOwner about payment failure
+    else Payment processed successfully
+    Platform -> Platform: Activate course promotion
+    Platform -> CourseOwner: Notify CourseOwner about \nsuccessful promotion activation
+    end
+end
+@enduml
